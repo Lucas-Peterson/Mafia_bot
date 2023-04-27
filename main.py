@@ -14,15 +14,15 @@ bot = Bot(token='5998393415:AAHqAPrCCFf9aLZahFFcFA0D5uVtvfBNCAE')
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
-
 class RoleStateFSM(StatesGroup):
     num_players = State()
-
+class NumberInput(StatesGroup):
+    input = State()
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: Message):
     # Приветственное сообщение
-    await bot.send_message(message.chat.id, "Тест механик начат, используйте тест команды")
+    await bot.send_message(message.chat.id, "Тест механик начат, используйте тест команды /role и /num ")
 
 
 @dp.message_handler(Command('role'))
@@ -76,10 +76,10 @@ async def process_num_players(message: Message, state: FSMContext):
 @dp.message_handler(commands=['num'])
 async def num_command_handler(message: types.Message):
     await message.answer('Введите количество игроков (от 7 до 10):')
+    await NumberInput.input.set()
 
-
-@dp.message_handler(lambda message: message.text.isdigit() and int(message.text) in range(7, 11))
-async def process_num(message: types.Message):
+@dp.message_handler(lambda message: message.text.isdigit() and int(message.text) in range(7, 11), state=NumberInput.input)
+async def process_num(message: types.Message, state: FSMContext):
     num_players = int(message.text)
     player_numbers = random.sample(range(1, num_players + 1), num_players)
 
@@ -92,6 +92,7 @@ async def process_num(message: types.Message):
         response_message += f'{i} => {new_number}\n'
 
     await message.answer(response_message)
+    await state.finish()
 
 
 if __name__ == '__main__':
